@@ -30,6 +30,7 @@
     "@capacitor-community/barcode-scanner": "^4.0.1",
     "@capacitor/android": "5.2.2",
     "@capacitor/app": "5.0.6",
+    "@capacitor/camera": "^4.1.5",
     "@capacitor/configure": "^2.0.10",
     "@capacitor/core": "5.2.2",
     "@capacitor/device": "^5.0.6",

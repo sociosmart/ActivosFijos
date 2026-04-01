@@ -4,6 +4,8 @@ import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial/ngx';
 import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions/ngx';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Geolocation } from '@capacitor/geolocation';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 
 @Component({
   selector: 'app-alta-activo',
@@ -18,9 +20,13 @@ export class AltaActivoPage {
   ubicacion = '';
   compania = '';
   selectedFile: File | null = null;
-
-  // Token JWT obtenido del login
+  previewImage: string | null = null;
   private accessToken: string = '';
+  companias = [
+  'AUTOSERVICIO LA PIEDRERA',
+  'CORPOX',
+  'MOLECULA'
+];
 
   constructor(
     private platform: Platform,
@@ -31,9 +37,8 @@ export class AltaActivoPage {
     private loadingController: LoadingController,
   ) {}
 
-  // ================= LOGIN API =================
+  // ================= LOGIN =================
   async loginApi() {
-
     const url = 'http://172.16.64.136:80/api_activos_v2/public/?auth&action=login';
 
     try {
@@ -42,30 +47,57 @@ export class AltaActivoPage {
         password: '123456'
       }).toPromise();
 
-      // 🔥 Guardamos token correctamente
       this.accessToken = response?.access || '';
-
-      console.log('Token:', this.accessToken);
-
       return !!this.accessToken;
 
     } catch (err) {
-      console.error('Error login:', err);
+      console.error(err);
       this.showToast('Error login API ❌', 'danger');
       return false;
     }
   }
 
-  // ================= GUARDAR ACTIVO =================
+  // ================= TOMAR FOTO =================
+  async tomarFoto() {
+    try {
+      const image = await Camera.getPhoto({
+        quality: 70,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera
+      });
+
+      if (!image?.dataUrl) {
+        this.showToast('No se pudo capturar la imagen ❌', 'danger');
+        return;
+      }
+
+      this.previewImage = image.dataUrl;
+
+      this.selectedFile = this.base64ToFile(
+        image.dataUrl,
+        `foto_${Date.now()}.jpg`
+      );
+
+    } catch (err) {
+      console.error(err);
+      this.showToast('Error cámara ❌', 'danger');
+    }
+  }
+
+  // ================= GUARDAR =================
   async guardarActivoYImprimir() {
 
-    // 🔴 Validación básica
     if (!this.nombreActivo) {
       this.showToast('Nombre es obligatorio', 'warning');
       return;
     }
 
-    // 🔐 Login si no hay token
+    if (!this.selectedFile) {
+      this.showToast('Debes tomar una fotografía 📸', 'warning');
+      return;
+    }
+
     if (!this.accessToken) {
       const ok = await this.loginApi();
       if (!ok) return;
@@ -74,28 +106,18 @@ export class AltaActivoPage {
     const url = 'http://172.16.64.136:80/api_activos_v2/public/';
     const formData = new FormData();
 
-    // 📌 Campos principales
     formData.append('nombre', this.nombreActivo);
     formData.append('ubicacion', this.ubicacion || '');
     formData.append('compania', this.compania || '');
+    formData.append('fecha', new Date().toISOString().split('T')[0]);
 
-    // 📅 Fecha en formato correcto
-    const fecha = new Date().toISOString().split('T')[0];
-    formData.append('fecha', fecha);
+    formData.append('fotografia', this.selectedFile, this.selectedFile.name);
 
-    // 🖼️ Imagen
-    if (this.selectedFile) {
-      formData.append('fotografia', this.selectedFile, this.selectedFile.name);
-    }
-
-    // ================= GPS =================
+    // ===== GPS seguro =====
     const gps = await this.obtenerUbicacion();
-
-    // 🔥 EVITA NULL POINTER EN ANDROID
     formData.append('latitud', gps?.lat ? gps.lat.toString() : '');
     formData.append('longitud', gps?.lng ? gps.lng.toString() : '');
 
-    // ================= HEADERS =================
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${this.accessToken}`
     });
@@ -105,16 +127,18 @@ export class AltaActivoPage {
 
       console.log('Respuesta API:', response);
 
-      // 🔥 Tu API no regresa ID → generamos fallback
       this.activoId = response?.id || response?.data?.id || 'TEMP-' + Date.now();
 
       this.showToast('Activo guardado ✅', 'success');
 
-      // 🖨️ Imprimir ticket
       await this.imprimirTicket();
 
+      // limpiar
+      this.previewImage = null;
+      this.selectedFile = null;
+
     } catch (err) {
-      console.error('Error API:', err);
+      console.error(err);
       this.showToast('Error al guardar ❌', 'danger');
     }
   }
@@ -122,34 +146,36 @@ export class AltaActivoPage {
   // ================= IMPRIMIR =================
   private async imprimirTicket() {
 
-    // 🔴 Solo dispositivo real
     if (!this.platform.is('cordova')) {
       this.showToast('Solo en dispositivo real', 'warning');
       return;
     }
 
-    // 🔐 Permisos Android
     const permisos = await this.pedirPermisos();
     if (!permisos) return;
 
     try {
       const devices: any[] = await this.bluetoothSerial.list();
-      console.log('Dispositivos BT:', devices);
+      console.log('BT devices:', devices);
 
-      // 🔥 Selección segura (evita null)
-      const impresora = devices.find(d =>
-        d && typeof d.id === 'string' && d.id.length > 0
-      );
+      const impresora = devices.find(d => d);
 
       if (!impresora) {
-        this.showToast('No hay impresora válida ❌', 'danger');
+        this.showToast('No hay impresora ❌', 'danger');
         return;
       }
 
-      // 🔥 Evita null en QR
-      const idSeguro = this.activoId ? this.activoId.toString() : '0';
+      // 🔥 FIX PRINCIPAL
+      const deviceId = impresora.id || impresora.address;
 
-      this.bluetoothSerial.connect(impresora.id).subscribe({
+      if (!deviceId) {
+        this.showToast('Impresora inválida ❌', 'danger');
+        return;
+      }
+
+      const idSeguro = this.activoId || '0';
+
+      this.bluetoothSerial.connect(deviceId).subscribe({
 
         next: async () => {
 
@@ -161,17 +187,12 @@ export class AltaActivoPage {
           const dataBytes = encoder.encode(idSeguro);
           const len = dataBytes.length + 3;
 
-          // 🔹 Inicializar impresora
           cmds.push(ESC, 0x40);
-
-          // 🔹 Centrar QR
           cmds.push(ESC, 0x61, 0x01);
 
-          // 🔹 Config QR
           cmds.push(GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x08);
           cmds.push(GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x30);
 
-          // 🔹 Datos QR
           cmds.push(
             GS, 0x28, 0x6B,
             len & 0xFF,
@@ -180,10 +201,8 @@ export class AltaActivoPage {
             ...dataBytes
           );
 
-          // 🔹 Imprimir QR
           cmds.push(GS, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30);
 
-          // 🔹 Texto
           cmds.push(ESC, 0x61, 0x00);
           cmds.push(0x0A);
 
@@ -191,17 +210,17 @@ export class AltaActivoPage {
           const fecha = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
 
           cmds.push(...this.textoABytes(`ID: ${idSeguro}\n`));
-          cmds.push(...this.textoABytes(`Nombre: ${this.nombreActivo || ''}\n`));
-          cmds.push(...this.textoABytes(`Ubicación: ${this.ubicacion || ''}\n`));
-          cmds.push(...this.textoABytes(`Compañía: ${this.compania || ''}\n`));
+          cmds.push(...this.textoABytes(`Nombre: ${this.nombreActivo}\n`));
+          cmds.push(...this.textoABytes(`Ubicación: ${this.ubicacion}\n`));
+          cmds.push(...this.textoABytes(`Compañía: ${this.compania}\n`));
           cmds.push(...this.textoABytes(`Fecha: ${fecha}\n`));
 
-          // 🔹 Espacio + corte
-          cmds.push(ESC, 0x64, 0x05); // Avanza 5 líneas
+          // 🔹 Espacio sin bug
+          cmds.push(ESC, 0x64, 0x05);
           await new Promise(res => setTimeout(res, 100));
-          cmds.push(GS, 0x56, 0x00);  // Corte
 
-          // 🔹 Enviar a impresora
+          cmds.push(GS, 0x56, 0x00);
+
           await this.bluetoothSerial.write(new Uint8Array(cmds).buffer);
           this.bluetoothSerial.disconnect();
 
@@ -210,7 +229,7 @@ export class AltaActivoPage {
 
         error: err => {
           console.error(err);
-          this.showToast('Error conectando impresora ❌', 'danger');
+          this.showToast('Error impresora ❌', 'danger');
         }
       });
 
@@ -235,14 +254,17 @@ export class AltaActivoPage {
 
       return res.hasPermission;
 
-    } catch (err) {
-      console.error(err);
+    } catch {
       return false;
     }
   }
 
   // ================= GPS =================
   async obtenerUbicacion() {
+
+    if (!Capacitor.isNativePlatform()) {
+      return null;
+    }
 
     const loading = await this.loadingController.create({
       message: '📍 Obteniendo ubicación...'
@@ -265,15 +287,12 @@ export class AltaActivoPage {
 
     } catch (err) {
       await loading.dismiss();
-      console.error('GPS error:', err);
-
-      this.showToast('No se pudo obtener ubicación ⚠️', 'warning');
-
+      console.error(err);
       return null;
     }
   }
 
-  // ================= TEXTO (acentos impresora) =================
+  // ================= UTIL =================
   private textoABytes(texto: string): number[] {
     const mapa: any = {
       'á':160,'é':130,'í':161,'ó':162,'ú':163,
@@ -283,7 +302,21 @@ export class AltaActivoPage {
     return Array.from(texto).map(c => mapa[c] || c.charCodeAt(0));
   }
 
-  // ================= TOAST =================
+  private base64ToFile(dataUrl: string, filename: string): File {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const bstr = atob(arr[1]);
+
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+
+    return new File([u8arr], filename, { type: mime });
+  }
+
   private async showToast(msg: string, color: string) {
     const t = await this.toastController.create({
       message: msg,
@@ -291,12 +324,5 @@ export class AltaActivoPage {
       color
     });
     t.present();
-  }
-
-  // ================= FILE =================
-  onFileChange(event: any) {
-    if (event.target.files?.length) {
-      this.selectedFile = event.target.files[0];
-    }
   }
 }

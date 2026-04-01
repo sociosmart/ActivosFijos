@@ -1,0 +1,56 @@
+.card-activo {
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+/* 🔥 Imagen CONTROLADA */
+.img-container {
+  width: 100%;
+  height: 110px; /* 👈 aquí está la magia */
+  overflow: hidden;
+  background: #f4f4f4;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.img-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* recorta sin deformar */
+}
+
+/* Header */
+ion-card-title {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+ion-card-subtitle {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Info */
+.info-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  margin-bottom: 5px;
+}
+
+.info-item ion-icon {
+  margin-right: 6px;
+  font-size: 16px;
+  color: var(--ion-color-primary);
+}
+
+/* ID */
+.info-id {
+  text-align: right;
+  font-size: 0.75rem;
+  color: #999;
+}

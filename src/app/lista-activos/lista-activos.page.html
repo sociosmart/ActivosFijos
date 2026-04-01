@@ -1,0 +1,47 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Activos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <ion-card *ngFor="let activo of activos" class="card-activo">
+
+    <!-- Imagen controlada -->
+    <div class="img-container">
+      <ng-container *ngIf="imagenes[activo.id]; else loadingImg">
+        <img [src]="imagenes[activo.id]"  />
+      </ng-container>
+
+      <ng-template #loadingImg>
+        <ion-spinner name="crescent"></ion-spinner>
+      </ng-template>
+    </div>
+
+    <!-- Header -->
+    <ion-card-header>
+      <ion-card-title>{{ activo.nombre }}</ion-card-title>
+      <ion-card-subtitle>{{ activo.compania }}</ion-card-subtitle>
+    </ion-card-header>
+
+    <!-- Contenido -->
+    <ion-card-content>
+      <div class="info-item">
+        <ion-icon name="location-outline"></ion-icon>
+        <span>{{ activo.ubicacion || 'Sin ubicación' }}</span>
+      </div>
+
+      <div class="info-item">
+        <ion-icon name="calendar-outline"></ion-icon>
+        <span>{{ activo.fecha }}</span>
+      </div>
+
+      <div class="info-id">
+        ID: {{ activo.id }}
+      </div>
+    </ion-card-content>
+
+  </ion-card>
+
+</ion-content>

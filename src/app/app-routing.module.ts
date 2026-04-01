@@ -11,7 +11,13 @@ const routes: Routes = [
   {
     path: 'alta-activo',
     loadChildren: () => import('./alta-activo/alta-activo.module').then( m => m.AltaActivoPageModule)
+  },
+  
+  {
+    path: 'lista-activos',
+    loadChildren: () => import('./lista-activos/lista-activos.module').then( m => m.ListaActivosPageModule)
   }
+
 
 
 
