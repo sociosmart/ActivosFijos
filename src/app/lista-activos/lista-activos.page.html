@@ -1,5 +1,8 @@
 <ion-header>
   <ion-toolbar color="primary">
+     <ion-button [routerLink]="'/alta-activo'">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
     <ion-title>Activos</ion-title>
   </ion-toolbar>
 </ion-header>
@@ -8,40 +11,40 @@
 
   <ion-card *ngFor="let activo of activos" class="card-activo">
 
-    <!-- Imagen controlada -->
-    <div class="img-container">
+    <div class="img-card-container">
       <ng-container *ngIf="imagenes[activo.id]; else loadingImg">
-        <img [src]="imagenes[activo.id]"  />
+        <img [src]="imagenes[activo.id]" (click)="abrirImagen(imagenes[activo.id])" />
       </ng-container>
-
       <ng-template #loadingImg>
         <ion-spinner name="crescent"></ion-spinner>
       </ng-template>
     </div>
 
-    <!-- Header -->
-    <ion-card-header>
-      <ion-card-title>{{ activo.nombre }}</ion-card-title>
-      <ion-card-subtitle>{{ activo.compania }}</ion-card-subtitle>
-    </ion-card-header>
-
-    <!-- Contenido -->
-    <ion-card-content>
+    <ion-card-content class="card-content">
+      <h2>{{ activo.nombre }}</h2>
+      <h3>{{ activo.compania }}</h3>
       <div class="info-item">
         <ion-icon name="location-outline"></ion-icon>
         <span>{{ activo.ubicacion || 'Sin ubicación' }}</span>
       </div>
-
       <div class="info-item">
         <ion-icon name="calendar-outline"></ion-icon>
         <span>{{ activo.fecha }}</span>
       </div>
-
-      <div class="info-id">
-        ID: {{ activo.id }}
-      </div>
+      <div class="info-id">ID: {{ activo.id }}</div>
     </ion-card-content>
 
   </ion-card>
 
 </ion-content>
+
+<ion-modal [isOpen]="modalImagenAbierto" (didDismiss)="cerrarImagen()">
+  <ng-template>
+    <ion-content class="modal-img-wrapper">
+      <button class="btn-cerrar" (click)="cerrarImagen()">✕</button>
+      <div class="img-container-modal">
+        <img [src]="imagenSeleccionada" class="img-full" />
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

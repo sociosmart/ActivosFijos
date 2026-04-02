@@ -6,6 +6,7 @@
 
 <ion-content class="ion-padding">
 
+  <!-- Campos del formulario -->
   <ion-item>
     <ion-label position="stacked">Nombre *</ion-label>
     <ion-input [(ngModel)]="nombreActivo" required></ion-input>
@@ -16,30 +17,32 @@
     <ion-input [(ngModel)]="ubicacion"></ion-input>
   </ion-item>
 
-<ion-item>
-  <ion-label position="stacked">Compañía</ion-label>
-  <ion-select [(ngModel)]="compania" placeholder="Selecciona una compañía">
-    <ion-select-option *ngFor="let c of companias" [value]="c">
-      {{ c }}
-    </ion-select-option>
-  </ion-select>
-</ion-item>
-
+  <ion-item>
+    <ion-label position="stacked">Compañía</ion-label>
+    <ion-select [(ngModel)]="compania">
+      <ion-select-option value="Compania1">Compañía 1</ion-select-option>
+      <ion-select-option value="Compania2">Compañía 2</ion-select-option>
+    </ion-select>
+  </ion-item>
 
   <ion-item>
-  <ion-label>Fotografía</ion-label>
-  <ion-button expand="block" (click)="tomarFoto()">
-    📸 Tomar foto
-  </ion-button>
-</ion-item>
+    <ion-label>Fotografía</ion-label>
+    <ion-button expand="block" (click)="tomarFoto()">📸 Tomar foto</ion-button>
+  </ion-item>
 
-<!-- Preview -->
-<ion-item *ngIf="previewImage">
-  <img [src]="previewImage" style="width: 100%; border-radius: 10px;">
-</ion-item>
+  <!-- Preview -->
+  <ion-item *ngIf="previewImage">
+    <img [src]="previewImage" style="width: 100%; border-radius: 10px;">
+  </ion-item>
 
+  <!-- Botones -->
   <ion-button expand="full" color="primary" (click)="guardarActivoYImprimir()">
     Guardar e Imprimir
+  </ion-button>
+
+  <!-- 🔹 Nuevo botón para ir a Lista Activos -->
+  <ion-button expand="full" color="secondary" [routerLink]="'/lista-activos'">
+    Ver Lista de Activos
   </ion-button>
 
 </ion-content>
