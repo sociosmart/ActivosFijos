@@ -1,23 +1,33 @@
-/* Tarjetas de activos */
+/* Fondo general */
+.fondo {
+  --background: #f4f6f9;
+}
+
+/* Tarjeta */
 .card-activo {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
-  margin-bottom: 15px;
+  align-items: center;
+  margin-bottom: 12px;
   padding: 10px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  transition: transform 0.15s ease;
 }
 
-/* Imagen dentro de la tarjeta */
+.card-activo:active {
+  transform: scale(0.98);
+}
+
+/* Imagen */
 .img-card-container {
-  flex-shrink: 0;
-  width: 80px;
-  height: 80px;
+  width: 75px;
+  height: 75px;
+  border-radius: 10px;
   overflow: hidden;
-  border-radius: 8px;
-  margin-right: 15px;
-  cursor: pointer;
+  margin-right: 12px;
+  background: #eee;
 }
 
 .img-card-container img {
@@ -26,88 +36,89 @@
   object-fit: cover;
 }
 
-/* Contenido de la tarjeta */
-.card-content {
+/* Loading imagen */
+.img-loading {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+/* Contenido */
+.card-content {
   flex: 1;
   padding: 0;
 }
 
+/* Header */
+.header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .card-content h2 {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: bold;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .card-content h3 {
-  margin: 0 0 5px 0;
-  font-size: 0.95rem;
-  color: gray;
+  margin: 2px 0 6px 0;
+  font-size: 0.85rem;
+  color: #888;
 }
 
-/* Info items con iconos */
+/* Badge ID */
+.badge-id {
+  font-size: 0.7rem;
+  background: #3880ff;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+/* Info */
 .info-item {
   display: flex;
   align-items: center;
+  font-size: 0.85rem;
   margin: 2px 0;
-  font-size: 0.9rem;
 }
 
 .info-item ion-icon {
-  margin-right: 5px;
-  font-size: 1.1rem;
+  margin-right: 6px;
   color: #3880ff;
 }
 
-.info-id {
-  margin-top: 5px;
-  font-size: 0.8rem;
-  color: #666;
-}
-
-/* Modal imagen full screen */
+/* MODAL */
 .modal-img-wrapper {
   --background: rgba(0,0,0,0.95);
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative;
-  padding: 0;
 }
 
 .img-container-modal {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   max-width: 95%;
   max-height: 90vh;
 }
 
 .img-full {
-  max-width: 100%;
-  max-height: 90vh;
-  object-fit: contain;
-  border-radius: 8px;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
 }
 
-/* Botón cerrar modal */
+/* Botón cerrar */
 .btn-cerrar {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1000;
+  top: 15px;
+  right: 15px;
   font-size: 2rem;
   color: white;
-  background: rgba(0,0,0,0.5);
-  border: none;
+  background: rgba(0,0,0,0.6);
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  width: 45px;
+  height: 45px;
 }

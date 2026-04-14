@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { LoadingController, ToastController } from '@ionic/angular';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { AuthService } from '../services/auth.services';
 
 @Component({
   selector: 'app-lista-activos',
@@ -15,100 +16,109 @@ export class ListaActivosPage implements OnInit {
   imagenSeleccionada: SafeUrl | null = null;
   modalImagenAbierto = false;
 
-  private apiUrl = 'http://172.16.64.136:80/api_activos_v2/public/';
-  private loginUrl = 'http://172.16.64.136:80/api_activos_v2/public/?auth&action=login';
-  private accessToken: string = '';
+  private apiUrl = 'http://192.168.68.149/api_activos_v2/public/';
 
   constructor(
     private http: HttpClient,
     private loadingController: LoadingController,
     private toastController: ToastController,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private auth: AuthService
   ) {}
 
   ngOnInit() {
     this.init();
   }
 
+  // ================= INIT =================
   async init() {
-    const loading = await this.loadingController.create({ message: 'Inicializando...' });
-    await loading.present();
 
-    const ok = await this.loginApi();
-    if (ok) {
-      await this.cargarActivos();
-    } else {
-      this.showToast('No se pudo autenticar ❌', 'danger');
-    }
+    const loading = await this.loadingController.create({
+      message: 'Cargando...'
+    });
 
-    await loading.dismiss();
-  }
-
-  async loginApi(): Promise<boolean> {
-    try {
-      const response: any = await this.http.post(this.loginUrl, {
-        email: 'admin@test.com',
-        password: '123456'
-      }).toPromise();
-
-      this.accessToken = response?.access || '';
-      console.log('Token:', this.accessToken);
-
-      return !!this.accessToken;
-
-    } catch (err) {
-      console.error('Error login:', err);
-      this.showToast('Error login API ❌', 'danger');
-      return false;
-    }
-  }
-
-  async cargarActivos() {
-    const loading = await this.loadingController.create({ message: 'Cargando activos...' });
     await loading.present();
 
     try {
-      const headers = new HttpHeaders({
-        'Authorization': `Bearer ${this.accessToken}`,
-        'Accept': 'application/json'
-      });
 
-      const response: any = await this.http.get(this.apiUrl, { headers }).toPromise();
-      this.activos = response || [];
+      const token = await this.auth.getToken();
 
-      // 🔥 Cargar imágenes
-      for (const activo of this.activos) {
-        if (activo.id) this.cargarImagen(activo.id);
+      if (!token) {
+        this.showToast('Sesión expirada ❌', 'danger');
+        return;
       }
 
-      await loading.dismiss();
+    await this.cargarActivos();
+
     } catch (err) {
-      console.error('Error cargando activos:', err);
+      console.error(err);
+      this.showToast('Error inicial ❌', 'danger');
+    } finally {
       await loading.dismiss();
-      this.showToast('Error al cargar activos ❌', 'danger');
     }
   }
 
-  async cargarImagen(id: number) {
-    try {
-      const headers = new HttpHeaders({ 'Authorization': `Bearer ${this.accessToken}` });
-      const blob = await this.http.get(
-        `${this.apiUrl}activo/${id}/imagen`,
-        { headers, responseType: 'blob' }
-      ).toPromise();
+  // ================= CARGAR ACTIVOS =================
+ async cargarActivos() {
 
-      if (!blob) return;
+  const loading = await this.loadingController.create({
+    message: 'Cargando activos...'
+  });
+
+  await loading.present();
+
+  this.http.get<any[]>(`${this.apiUrl}activos`)
+    .subscribe({
+      next: (res) => {
+
+        console.log('ACTIVOS:', res);
+
+        this.activos = res || [];
+
+        // 🔥 cargar imágenes
+        for (const activo of this.activos) {
+          if (activo.id) {
+            this.cargarImagen(activo.id);
+          }
+        }
+
+      },
+      error: async (err) => {
+
+        console.error('ERROR API:', err);
+
+        if (err.status === 401) {
+          this.showToast('Sesión expirada ❌', 'danger');
+        } else {
+          this.showToast('Error al cargar activos ❌', 'danger');
+        }
+
+        await loading.dismiss();
+      },
+      complete: async () => {
+        await loading.dismiss();
+      }
+    });
+}
+cargarImagen(id: number) {
+
+  this.http.get(`${this.apiUrl}activo/${id}/imagen`, {
+    responseType: 'blob'
+  }).subscribe({
+    next: (blob) => {
 
       const url = URL.createObjectURL(blob);
       this.imagenes[id] = this.sanitizer.bypassSecurityTrustUrl(url);
 
-    } catch (err) {
-      console.error('Error cargando imagen ID:', id, err);
+    },
+    error: (err) => {
+      console.error('ERROR IMAGEN:', id, err);
     }
-  }
-
-  abrirImagen(img: string | SafeUrl) {
-    this.imagenSeleccionada = img as SafeUrl; // Aseguramos tipo SafeUrl
+  });
+}
+  // ================= MODAL =================
+  abrirImagen(img: SafeUrl) {
+    this.imagenSeleccionada = img;
     this.modalImagenAbierto = true;
   }
 
@@ -117,13 +127,25 @@ export class ListaActivosPage implements OnInit {
     this.imagenSeleccionada = null;
   }
 
-  async refrescar(event: any) {
-    await this.cargarActivos();
+  // ================= REFRESH =================
+async refrescar(event?: any) {
+
+  await this.cargarActivos();
+
+  // 🔥 solo si existe (evita error)
+  if (event?.target?.complete) {
     event.target.complete();
   }
+}
 
+  // ================= TOAST =================
   private async showToast(msg: string, color: string) {
-    const t = await this.toastController.create({ message: msg, duration: 3000, color });
+    const t = await this.toastController.create({
+      message: msg,
+      duration: 2500,
+      color
+    });
     t.present();
   }
+  
 }

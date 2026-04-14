@@ -1,0 +1,60 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Escanear Activo</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="scanner-container">
+
+  <!-- ================= BOTÓN INICIO ================= -->
+  <ion-button expand="block" (click)="startScan()" *ngIf="!isScanning && !showScannerUI">
+    📷 Escanear código de barras
+  </ion-button>
+
+  <!-- ================= OVERLAY SCANNER ================= -->
+  <div class="scanner-overlay" *ngIf="showScannerUI">
+
+    <div class="scanner-frame">
+      <div class="scan-line"></div>
+    </div>
+
+    <p class="scanner-text">
+      📍 Coloca el código dentro del cuadro
+    </p>
+
+  </div>
+
+  <!-- ================= RESULTADO ACTIVO ================= -->
+  <div *ngIf="activo && !showScannerUI" class="result-wrapper">
+
+    <ion-card>
+
+      <ion-card-header>
+        <ion-card-title>{{ activo.nombre }}</ion-card-title>
+      </ion-card-header>
+
+      <ion-card-content>
+
+        <p><b>ID:</b> {{ activo.id }}</p>
+        <p><b>Ubicación:</b> {{ activo.ubicacion }}</p>
+        <p><b>Compañía:</b> {{ activo.compania }}</p>
+        <p><b>Fecha:</b> {{ activo.fecha }}</p>
+
+        <img
+          *ngIf="imagenUrl"
+          [src]="imagenUrl"
+          class="asset-image"
+        />
+
+      </ion-card-content>
+
+    </ion-card>
+
+    <!-- BOTÓN REESCANEAR -->
+    <ion-button expand="block" color="primary" (click)="startScan()">
+      🔄 Escanear otro
+    </ion-button>
+
+  </div>
+
+</ion-content>

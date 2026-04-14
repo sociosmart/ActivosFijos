@@ -1,0 +1,21 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Login</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <ion-item>
+    <ion-input [(ngModel)]="email" placeholder="Usuario"></ion-input>
+  </ion-item>
+
+  <ion-item>
+    <ion-input [(ngModel)]="password" type="password" placeholder="Password"></ion-input>
+  </ion-item>
+
+  <ion-button expand="block" (click)="login()">
+    Iniciar sesión
+  </ion-button>
+
+</ion-content>

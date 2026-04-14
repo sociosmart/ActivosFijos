@@ -2,10 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders,HttpResponse  } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { Storage } from '@ionic/storage';
 import { catchError, map, tap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
+import { Storage } from '@ionic/storage-angular';
 export interface ApiResult {
   Mensaje:any;
   Data:any[];
